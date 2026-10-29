@@ -234,37 +234,41 @@
 
 <!-- ☁️ SYNC MODAL -->
 <div id="sync-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;padding:16px;">
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:420px;width:100%;box-shadow:0 0 40px rgba(65,105,225,.3);">
-    <div style="font-size:16px;font-weight:900;color:var(--gold);margin-bottom:4px;letter-spacing:.08em;">☁️ CLOUD SYNC</div>
-    <div style="font-size:12px;color:var(--dim);margin-bottom:20px;">Sync your progress across all devices via GitHub Gist (free)</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;max-width:440px;width:100%;box-shadow:0 0 40px rgba(65,105,225,.3);max-height:90vh;overflow-y:auto;">
+    <div style="font-size:16px;font-weight:900;color:var(--gold);margin-bottom:4px;letter-spacing:.08em;">☁️ CLOUD SYNC (GITHUB GIST)</div>
+    <div style="font-size:12px;color:var(--dim);margin-bottom:18px;">Keep your progress synced across your phone, laptop, and PC automatically.</div>
 
     <div style="margin-bottom:14px;">
-      <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:5px;">GitHub Personal Access Token</label>
+      <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:5px;">GitHub Personal Access Token (Classic)</label>
       <input id="sync-token-input" type="password" placeholder="ghp_xxxxxxxxxxxx"
         style="width:100%;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Courier New',monospace;font-size:12px;outline:none;">
       <div style="font-size:10px;color:var(--dim);margin-top:4px;">
-        Get one at <span style="color:var(--cyan);">github.com/settings/tokens</span> — needs only <b style="color:var(--green);">gist</b> scope
+        Generate at <a href="https://github.com/settings/tokens/new?scopes=gist&description=Solo%20Leveling%20Save" target="_blank" style="color:var(--cyan);text-decoration:underline;">github.com/settings/tokens</a> with <b style="color:var(--green);">gist</b> scope.
       </div>
     </div>
 
-    <div style="margin-bottom:20px;">
-      <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:5px;">Gist ID (leave blank to auto-create)</label>
-      <input id="sync-gist-input" type="text" placeholder="Auto-created on first sync"
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:5px;">Gist ID (Optional — Auto-detected from your account)</label>
+      <input id="sync-gist-input" type="text" placeholder="Auto-detected"
         style="width:100%;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Courier New',monospace;font-size:12px;outline:none;">
-      <div style="font-size:10px;color:var(--dim);margin-top:4px;">Share this ID on other devices to sync the same data</div>
+      <div id="sync-detected-info" style="font-size:10px;color:var(--cyan);margin-top:4px;">Leave blank — the system will automatically find your cloud save.</div>
     </div>
 
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button onclick="saveSyncSettings()" style="flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:'Courier New',monospace;font-weight:700;font-size:12px;cursor:pointer;">💾 SAVE &amp; SYNC</button>
-      <button onclick="closeSyncModal()" style="flex:1;padding:11px;background:var(--card2);color:var(--dim);border:1px solid var(--border);border-radius:8px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;">CANCEL</button>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button onclick="saveSyncSettings()" style="flex:1;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:'Courier New',monospace;font-weight:700;font-size:12px;cursor:pointer;">💾 SAVE &amp; CONNECT</button>
+      <button onclick="closeSyncModal()" style="padding:12px 18px;background:var(--card2);color:var(--dim);border:1px solid var(--border);border-radius:8px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;">CLOSE</button>
     </div>
-    <button onclick="clearSyncData()" style="width:100%;margin-top:10px;padding:9px;background:transparent;color:var(--red);border:1px solid var(--red);border-radius:8px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;opacity:.7;">🗑 Remove sync credentials from this device</button>
 
-    <div style="margin-top:14px;padding:12px;background:var(--bg2);border-radius:8px;font-size:11px;color:var(--dim);">
-      <b style="color:var(--text);">How to use on a new device:</b><br>
-      1. Create token at github.com/settings/tokens (gist scope)<br>
-      2. Enter the token + the Gist ID shown after first sync<br>
-      3. Click Save &amp; Sync — your data loads instantly
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      <button onclick="forcePullCloud()" style="padding:10px;background:rgba(0,229,255,.08);color:var(--cyan);border:1px solid var(--cyan);border-radius:8px;font-family:'Courier New',monospace;font-size:11px;font-weight:700;cursor:pointer;">⏬ FORCE PULL</button>
+      <button onclick="forcePushCloud()" style="padding:10px;background:rgba(255,215,0,.08);color:var(--gold);border:1px solid var(--gold);border-radius:8px;font-family:'Courier New',monospace;font-size:11px;font-weight:700;cursor:pointer;">⏫ FORCE PUSH</button>
+    </div>
+
+    <button onclick="clearSyncData()" style="width:100%;padding:8px;background:transparent;color:var(--red);border:1px solid var(--red);border-radius:8px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;opacity:.7;">🗑 Unlink token from this device</button>
+
+    <div style="margin-top:14px;padding:12px;background:var(--bg2);border-radius:8px;font-size:11px;color:var(--dim);line-height:1.5;">
+      <b style="color:var(--text);">✨ Seamless Cross-Device:</b><br>
+      Just paste the same GitHub token on any device (phone, laptop) and click <b>SAVE &amp; CONNECT</b>. The system automatically finds your save file in your GitHub Gists and pulls your levels!
     </div>
   </div>
 </div>
@@ -734,37 +738,111 @@ function makeDefaultState() {
 
 let S = makeDefaultState();
 
-// ─── GIST SYNC ──────────────────────────────────────────────────────────────
+// ─── GIST SYNC & STATE HELPERS ───────────────────────────────────────────────
 const GIST_TOKEN_KEY = "sl_gist_token";
 const GIST_ID_KEY    = "sl_gist_id";
 const GIST_FILE      = "solo-leveling-save.json";
 let   syncTimer      = null;
 let   syncPending    = false;
 
-function getToken() { return localStorage.getItem(GIST_TOKEN_KEY) || ""; }
-function getGistId() { return localStorage.getItem(GIST_ID_KEY) || ""; }
+function getToken()  { return (localStorage.getItem(GIST_TOKEN_KEY) || "").trim(); }
+function getGistId() { return (localStorage.getItem(GIST_ID_KEY) || "").trim(); }
 
 function setSyncStatus(msg, color) {
   const el = document.getElementById("sync-status");
   if (el) { el.textContent = msg; el.style.color = color || "var(--dim)"; }
 }
 
-async function gistPush() {
+function deepMerge(target, source) {
+  if (!source || typeof source !== "object") return target;
+  for (const k of Object.keys(source)) {
+    if (source[k] !== null && typeof source[k] === "object" && !Array.isArray(source[k])) {
+      target[k] = deepMerge(target[k] || {}, source[k]);
+    } else {
+      target[k] = source[k];
+    }
+  }
+  return target;
+}
+
+function calcTotalScore(state) {
+  if (!state) return 0;
+  let score = 0;
+  score += Math.max(0, (state.player?.level || 1) - 1) * 10000 + (state.player?.xp || 0);
+  score += (state.player?.gold || 0);
+  score += Math.max(0, (state.study?.level || 1) - 1) * 2000 + (state.study?.xp || 0) + (state.study?.todayVal || 0) * 100;
+  score += Math.max(0, (state.social?.level || 1) - 1) * 2000 + (state.social?.xp || 0);
+  if (state.physical) {
+    score += Math.max(0, (state.physical.level || 1) - 1) * 2000 + (state.physical.xp || 0);
+    score += Math.max(0, (state.physical.pushups?.level || 1) - 1) * 500 + (state.physical.pushups?.xp || 0) + (state.physical.pushups?.todayReps || 0) * 10;
+    score += Math.max(0, (state.physical.pullups?.level || 1) - 1) * 500 + (state.physical.pullups?.xp || 0) + (state.physical.pullups?.todayReps || 0) * 20;
+    score += Math.max(0, (state.physical.hangs?.level || 1) - 1) * 500 + (state.physical.hangs?.xp || 0) + (state.physical.hangs?.todaySeconds || 0) * 5;
+  }
+  if (Array.isArray(state.todos)) {
+    score += state.todos.filter(t => t.done).length * 100;
+  }
+  return score;
+}
+
+async function findUserGist(token) {
+  setSyncStatus("🔍 Locating cloud save on GitHub…", "var(--cyan)");
+  const res = await fetch("https://api.github.com/gists?per_page=100", {
+    headers: { Authorization: "token " + token, Accept: "application/vnd.github.v3+json" }
+  });
+  if (!res.ok) throw new Error("GitHub error: HTTP " + res.status);
+  const list = await res.json();
+  const matching = list.filter(g => (g.files && g.files[GIST_FILE]) || g.description === "Solo Leveling Save Data");
+  if (!matching.length) return null;
+  if (matching.length === 1) return matching[0].id;
+
+  // Multiple gists found: inspect them and select the one with highest progress
+  let bestId = matching[0].id;
+  let bestScore = -1;
+  for (const g of matching) {
+    try {
+      const gRes = await fetch("https://api.github.com/gists/" + g.id, {
+        headers: { Authorization: "token " + token, Accept: "application/vnd.github.v3+json" }
+      });
+      if (!gRes.ok) continue;
+      const gData = await gRes.json();
+      const raw = gData.files[GIST_FILE]?.content;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const score = calcTotalScore(parsed);
+        if (score > bestScore) {
+          bestScore = score;
+          bestId = g.id;
+        }
+      }
+    } catch(e) {}
+  }
+  return bestId;
+}
+
+async function gistPush(force = false) {
   const token = getToken();
   if (!token) return;
-  setSyncStatus("⏫ Syncing…", "var(--cyan)");
+  setSyncStatus("⏫ Syncing to cloud…", "var(--cyan)");
   try {
-    const body = JSON.stringify(S);
+    S._savedAt = Date.now();
     let gistId = getGistId();
+    if (!gistId) {
+      gistId = await findUserGist(token);
+      if (gistId) localStorage.setItem(GIST_ID_KEY, gistId);
+    }
+    const body = JSON.stringify(S);
     if (!gistId) {
       // Create new gist
       const res = await fetch("https://api.github.com/gists", {
         method: "POST",
-        headers: { Authorization: "token " + token, "Content-Type": "application/json" },
-        body: JSON.stringify({ description: "Solo Leveling Save Data", public: false,
-          files: { [GIST_FILE]: { content: body } } })
+        headers: { Authorization: "token " + token, "Content-Type": "application/json", Accept: "application/vnd.github.v3+json" },
+        body: JSON.stringify({
+          description: "Solo Leveling Save Data",
+          public: false,
+          files: { [GIST_FILE]: { content: body } }
+        })
       });
-      if (!res.ok) throw new Error("Create failed: " + res.status);
+      if (!res.ok) throw new Error("Create failed: HTTP " + res.status);
       const data = await res.json();
       localStorage.setItem(GIST_ID_KEY, data.id);
       gistId = data.id;
@@ -772,47 +850,77 @@ async function gistPush() {
       // Update existing gist
       const res = await fetch("https://api.github.com/gists/" + gistId, {
         method: "PATCH",
-        headers: { Authorization: "token " + token, "Content-Type": "application/json" },
+        headers: { Authorization: "token " + token, "Content-Type": "application/json", Accept: "application/vnd.github.v3+json" },
         body: JSON.stringify({ files: { [GIST_FILE]: { content: body } } })
       });
-      if (!res.ok) throw new Error("Update failed: " + res.status);
+      if (!res.ok) throw new Error("Update failed: HTTP " + res.status);
     }
-    setSyncStatus("✅ Synced " + new Date().toLocaleTimeString(), "var(--green)");
+    setSyncStatus("✅ Cloud synced " + new Date().toLocaleTimeString(), "var(--green)");
     syncPending = false;
   } catch(e) {
-    setSyncStatus("❌ Sync error", "var(--red)");
+    setSyncStatus("❌ Push error: " + e.message, "var(--red)");
     console.error("Gist push error:", e);
   }
 }
 
-async function gistPull() {
+async function gistPull(force = false) {
   const token = getToken();
-  const gistId = getGistId();
-  if (!token || !gistId) return false;
-  setSyncStatus("⏬ Loading…", "var(--cyan)");
+  if (!token) return false;
+  setSyncStatus("⏬ Loading from cloud…", "var(--cyan)");
   try {
+    let gistId = getGistId();
+    if (!gistId) {
+      gistId = await findUserGist(token);
+      if (gistId) {
+        localStorage.setItem(GIST_ID_KEY, gistId);
+      } else {
+        // No gist exists on user's GitHub account yet. If local has progress, push it!
+        if (calcTotalScore(S) > 0) {
+          await gistPush();
+        } else {
+          setSyncStatus("☁️ No cloud save found yet", "var(--dim)");
+        }
+        return false;
+      }
+    }
+
     const res = await fetch("https://api.github.com/gists/" + gistId, {
-      headers: { Authorization: "token " + token }
+      headers: { Authorization: "token " + token, Accept: "application/vnd.github.v3+json" }
     });
-    if (!res.ok) throw new Error("Pull failed: " + res.status);
+    if (!res.ok) {
+      if (res.status === 404) {
+        localStorage.removeItem(GIST_ID_KEY);
+        return gistPull(force);
+      }
+      throw new Error("HTTP " + res.status);
+    }
     const data = await res.json();
     const raw = data.files[GIST_FILE]?.content;
-    if (!raw) throw new Error("File not found in gist");
+    if (!raw) throw new Error("Save file missing in gist");
     const remote = JSON.parse(raw);
-    // Merge: use whichever has higher overall level (most progress)
-    const localLevel = S.player?.level || 0;
-    const remoteLevel = remote.player?.level || 0;
-    if (remoteLevel >= localLevel) {
-      S = Object.assign(makeDefaultState(), remote);
-      save(); // persist to localStorage too
-      renderAll(); drawAllCharts();
-      setSyncStatus("✅ Loaded from cloud " + new Date().toLocaleTimeString(), "var(--green)");
+
+    const localScore  = calcTotalScore(S);
+    const remoteScore = calcTotalScore(remote);
+    const localTime   = S._savedAt || 0;
+    const remoteTime  = remote._savedAt || 0;
+
+    if (force || remoteScore > localScore || (remoteScore === localScore && remoteTime >= localTime) || localScore === 0) {
+      // Remote is ahead or equal: load remote into local
+      S = deepMerge(makeDefaultState(), remote);
+      if (!Array.isArray(S.todos)) S.todos = JSON.parse(JSON.stringify(DEFAULT_TODOS));
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch(e){}
+      renderAll();
+      drawAllCharts();
+      setSyncStatus("✅ Loaded from cloud (Lv." + (S.player?.level || 1) + " Player)", "var(--green)");
+      return true;
     } else {
-      setSyncStatus("✅ Local is newer", "var(--green)");
+      // Local is ahead of cloud: push local to update the cloud
+      setSyncStatus("⏫ Local is ahead — updating cloud…", "var(--cyan)");
+      await gistPush();
+      return true;
     }
-    return true;
   } catch(e) {
-    setSyncStatus("❌ Pull error", "var(--red)");
+    setSyncStatus("❌ Pull error: " + e.message, "var(--red)");
     console.error("Gist pull error:", e);
     return false;
   }
@@ -828,30 +936,45 @@ function openSyncModal() {
   document.getElementById("sync-modal").style.display = "flex";
   document.getElementById("sync-token-input").value = getToken();
   document.getElementById("sync-gist-input").value  = getGistId();
+  const infoEl = document.getElementById("sync-detected-info");
+  if (infoEl) {
+    const gid = getGistId();
+    infoEl.textContent = gid ? ("Active Gist ID: " + gid) : "Gist will be auto-detected from your GitHub account";
+  }
 }
 
 function closeSyncModal() {
   document.getElementById("sync-modal").style.display = "none";
 }
 
-function saveSyncSettings() {
+async function saveSyncSettings() {
   const token = document.getElementById("sync-token-input").value.trim();
   const gistId = document.getElementById("sync-gist-input").value.trim();
   if (token) localStorage.setItem(GIST_TOKEN_KEY, token); else localStorage.removeItem(GIST_TOKEN_KEY);
   if (gistId) localStorage.setItem(GIST_ID_KEY, gistId);  else localStorage.removeItem(GIST_ID_KEY);
   closeSyncModal();
   if (token) {
-    setSyncStatus("⏫ Pushing…", "var(--cyan)");
-    gistPush();
+    // ALWAYS pull first when user configures sync to avoid wiping existing cloud progress!
+    await gistPull(false);
   }
 }
 
 async function syncNow() {
   const token = getToken();
   if (!token) { openSyncModal(); return; }
-  // Pull first, then push
-  await gistPull();
-  setTimeout(gistPush, 500);
+  await gistPull(false);
+}
+
+async function forcePullCloud() {
+  if (!confirm("Overwrite this device's data with the latest cloud save?")) return;
+  closeSyncModal();
+  await gistPull(true);
+}
+
+async function forcePushCloud() {
+  if (!confirm("Overwrite the cloud save with this device's current data?")) return;
+  closeSyncModal();
+  await gistPush(true);
 }
 
 function clearSyncData() {
@@ -864,6 +987,7 @@ function clearSyncData() {
 // ─── END GIST SYNC ────────────────────────────────────────────────────────────
 
 function save() {
+  S._savedAt = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch(e){}
   scheduleSyncPush();
 }
@@ -873,8 +997,7 @@ function load() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return;
     const saved = JSON.parse(raw);
-    // Deep merge
-    S = Object.assign(makeDefaultState(), saved);
+    S = deepMerge(makeDefaultState(), saved);
     if (!S.todos || !Array.isArray(S.todos)) S.todos = JSON.parse(JSON.stringify(DEFAULT_TODOS));
 
     // Daily reset check
@@ -1461,14 +1584,9 @@ window.addEventListener("DOMContentLoaded", () => {
   renderAll();
   drawAllCharts();
 
-  // Auto-pull from Gist on startup if configured
-  if (getToken() && getGistId()) {
-    setSyncStatus("⏬ Loading from cloud…", "var(--cyan)");
-    gistPull().then(ok => {
-      if (!ok) setSyncStatus("⚠️ Cloud load failed — using local data", "var(--red)");
-    });
-  } else if (getToken()) {
-    setSyncStatus("⚙ Token set — no Gist yet (will create on first save)", "var(--dim)");
+  // Auto-pull from Gist on startup if token configured
+  if (getToken()) {
+    gistPull();
   } else {
     setSyncStatus("☁️ Tap SETUP to enable cross-device sync (free)", "var(--dim)");
   }
