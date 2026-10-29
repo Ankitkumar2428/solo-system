@@ -232,6 +232,43 @@
   </div>
 </div>
 
+<!-- ☁️ SYNC MODAL -->
+<div id="sync-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:420px;width:100%;box-shadow:0 0 40px rgba(65,105,225,.3);">
+    <div style="font-size:16px;font-weight:900;color:var(--gold);margin-bottom:4px;letter-spacing:.08em;">☁️ CLOUD SYNC</div>
+    <div style="font-size:12px;color:var(--dim);margin-bottom:20px;">Sync your progress across all devices via GitHub Gist (free)</div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:5px;">GitHub Personal Access Token</label>
+      <input id="sync-token-input" type="password" placeholder="ghp_xxxxxxxxxxxx"
+        style="width:100%;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Courier New',monospace;font-size:12px;outline:none;">
+      <div style="font-size:10px;color:var(--dim);margin-top:4px;">
+        Get one at <span style="color:var(--cyan);">github.com/settings/tokens</span> — needs only <b style="color:var(--green);">gist</b> scope
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <label style="font-size:11px;color:var(--dim);display:block;margin-bottom:5px;">Gist ID (leave blank to auto-create)</label>
+      <input id="sync-gist-input" type="text" placeholder="Auto-created on first sync"
+        style="width:100%;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Courier New',monospace;font-size:12px;outline:none;">
+      <div style="font-size:10px;color:var(--dim);margin-top:4px;">Share this ID on other devices to sync the same data</div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="saveSyncSettings()" style="flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:'Courier New',monospace;font-weight:700;font-size:12px;cursor:pointer;">💾 SAVE &amp; SYNC</button>
+      <button onclick="closeSyncModal()" style="flex:1;padding:11px;background:var(--card2);color:var(--dim);border:1px solid var(--border);border-radius:8px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;">CANCEL</button>
+    </div>
+    <button onclick="clearSyncData()" style="width:100%;margin-top:10px;padding:9px;background:transparent;color:var(--red);border:1px solid var(--red);border-radius:8px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;opacity:.7;">🗑 Remove sync credentials from this device</button>
+
+    <div style="margin-top:14px;padding:12px;background:var(--bg2);border-radius:8px;font-size:11px;color:var(--dim);">
+      <b style="color:var(--text);">How to use on a new device:</b><br>
+      1. Create token at github.com/settings/tokens (gist scope)<br>
+      2. Enter the token + the Gist ID shown after first sync<br>
+      3. Click Save &amp; Sync — your data loads instantly
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════ NOTIFICATION ══════════════ -->
 <div id="notif" class="notif">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -280,6 +317,15 @@
           <div style="font-size:11px;color:var(--dim);">TODAY</div>
           <div id="today-date" style="font-size:13px;font-weight:700;color:var(--text);"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Sync bar -->
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <span id="sync-status" style="font-size:11px;color:var(--dim);">☁️ Sync not configured</span>
+      <div style="display:flex;gap:8px;">
+        <button onclick="syncNow()" style="padding:6px 14px;background:var(--card2);color:var(--cyan);border:1px solid var(--cyan);border-radius:8px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;font-weight:700;">⟳ SYNC NOW</button>
+        <button onclick="openSyncModal()" style="padding:6px 14px;background:var(--card2);color:var(--dim);border:1px solid var(--border);border-radius:8px;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;">⚙ SETUP</button>
       </div>
     </div>
   </div>
@@ -688,8 +734,138 @@ function makeDefaultState() {
 
 let S = makeDefaultState();
 
+// ─── GIST SYNC ──────────────────────────────────────────────────────────────
+const GIST_TOKEN_KEY = "sl_gist_token";
+const GIST_ID_KEY    = "sl_gist_id";
+const GIST_FILE      = "solo-leveling-save.json";
+let   syncTimer      = null;
+let   syncPending    = false;
+
+function getToken() { return localStorage.getItem(GIST_TOKEN_KEY) || ""; }
+function getGistId() { return localStorage.getItem(GIST_ID_KEY) || ""; }
+
+function setSyncStatus(msg, color) {
+  const el = document.getElementById("sync-status");
+  if (el) { el.textContent = msg; el.style.color = color || "var(--dim)"; }
+}
+
+async function gistPush() {
+  const token = getToken();
+  if (!token) return;
+  setSyncStatus("⏫ Syncing…", "var(--cyan)");
+  try {
+    const body = JSON.stringify(S);
+    let gistId = getGistId();
+    if (!gistId) {
+      // Create new gist
+      const res = await fetch("https://api.github.com/gists", {
+        method: "POST",
+        headers: { Authorization: "token " + token, "Content-Type": "application/json" },
+        body: JSON.stringify({ description: "Solo Leveling Save Data", public: false,
+          files: { [GIST_FILE]: { content: body } } })
+      });
+      if (!res.ok) throw new Error("Create failed: " + res.status);
+      const data = await res.json();
+      localStorage.setItem(GIST_ID_KEY, data.id);
+      gistId = data.id;
+    } else {
+      // Update existing gist
+      const res = await fetch("https://api.github.com/gists/" + gistId, {
+        method: "PATCH",
+        headers: { Authorization: "token " + token, "Content-Type": "application/json" },
+        body: JSON.stringify({ files: { [GIST_FILE]: { content: body } } })
+      });
+      if (!res.ok) throw new Error("Update failed: " + res.status);
+    }
+    setSyncStatus("✅ Synced " + new Date().toLocaleTimeString(), "var(--green)");
+    syncPending = false;
+  } catch(e) {
+    setSyncStatus("❌ Sync error", "var(--red)");
+    console.error("Gist push error:", e);
+  }
+}
+
+async function gistPull() {
+  const token = getToken();
+  const gistId = getGistId();
+  if (!token || !gistId) return false;
+  setSyncStatus("⏬ Loading…", "var(--cyan)");
+  try {
+    const res = await fetch("https://api.github.com/gists/" + gistId, {
+      headers: { Authorization: "token " + token }
+    });
+    if (!res.ok) throw new Error("Pull failed: " + res.status);
+    const data = await res.json();
+    const raw = data.files[GIST_FILE]?.content;
+    if (!raw) throw new Error("File not found in gist");
+    const remote = JSON.parse(raw);
+    // Merge: use whichever has higher overall level (most progress)
+    const localLevel = S.player?.level || 0;
+    const remoteLevel = remote.player?.level || 0;
+    if (remoteLevel >= localLevel) {
+      S = Object.assign(makeDefaultState(), remote);
+      save(); // persist to localStorage too
+      renderAll(); drawAllCharts();
+      setSyncStatus("✅ Loaded from cloud " + new Date().toLocaleTimeString(), "var(--green)");
+    } else {
+      setSyncStatus("✅ Local is newer", "var(--green)");
+    }
+    return true;
+  } catch(e) {
+    setSyncStatus("❌ Pull error", "var(--red)");
+    console.error("Gist pull error:", e);
+    return false;
+  }
+}
+
+function scheduleSyncPush() {
+  syncPending = true;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => { if (syncPending) gistPush(); }, 3000);
+}
+
+function openSyncModal() {
+  document.getElementById("sync-modal").style.display = "flex";
+  document.getElementById("sync-token-input").value = getToken();
+  document.getElementById("sync-gist-input").value  = getGistId();
+}
+
+function closeSyncModal() {
+  document.getElementById("sync-modal").style.display = "none";
+}
+
+function saveSyncSettings() {
+  const token = document.getElementById("sync-token-input").value.trim();
+  const gistId = document.getElementById("sync-gist-input").value.trim();
+  if (token) localStorage.setItem(GIST_TOKEN_KEY, token); else localStorage.removeItem(GIST_TOKEN_KEY);
+  if (gistId) localStorage.setItem(GIST_ID_KEY, gistId);  else localStorage.removeItem(GIST_ID_KEY);
+  closeSyncModal();
+  if (token) {
+    setSyncStatus("⏫ Pushing…", "var(--cyan)");
+    gistPush();
+  }
+}
+
+async function syncNow() {
+  const token = getToken();
+  if (!token) { openSyncModal(); return; }
+  // Pull first, then push
+  await gistPull();
+  setTimeout(gistPush, 500);
+}
+
+function clearSyncData() {
+  if (!confirm("Remove sync credentials from this device?")) return;
+  localStorage.removeItem(GIST_TOKEN_KEY);
+  localStorage.removeItem(GIST_ID_KEY);
+  setSyncStatus("🔒 Sync disabled", "var(--dim)");
+  closeSyncModal();
+}
+// ─── END GIST SYNC ────────────────────────────────────────────────────────────
+
 function save() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch(e){}
+  scheduleSyncPush();
 }
 
 function load() {
@@ -1284,6 +1460,18 @@ window.addEventListener("DOMContentLoaded", () => {
   load();
   renderAll();
   drawAllCharts();
+
+  // Auto-pull from Gist on startup if configured
+  if (getToken() && getGistId()) {
+    setSyncStatus("⏬ Loading from cloud…", "var(--cyan)");
+    gistPull().then(ok => {
+      if (!ok) setSyncStatus("⚠️ Cloud load failed — using local data", "var(--red)");
+    });
+  } else if (getToken()) {
+    setSyncStatus("⚙ Token set — no Gist yet (will create on first save)", "var(--dim)");
+  } else {
+    setSyncStatus("☁️ Tap SETUP to enable cross-device sync (free)", "var(--dim)");
+  }
 
   // Redraw charts on resize
   window.addEventListener("resize", drawAllCharts);
